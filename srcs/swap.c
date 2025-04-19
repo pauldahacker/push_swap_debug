@@ -31,6 +31,8 @@ void	sa(t_stack *a)
 
 void	sb(t_stack *b)
 {
+	print_stack(b->other_stack);
+	print_stack(b);
 	write(1, "sb\n", 3);
 	swap(b);
 }
@@ -50,14 +52,14 @@ void	try_ss(t_stack *stack1, t_stack *stack2)
 {
 	if (stack1->a_or_b == A && stack2->a_or_b == B)
 	{
-		if (get_next_move(stack2, stack1->pivot) == SWAP_FLAG)
+		if (stack2->len >= 2 && stack2->content[0] < stack2->content[1])
 			ss(stack1, stack2);
 		else
 			sa(stack1);
 	}
 	else if (stack1->a_or_b == B && stack2->a_or_b == A)
 	{
-		if (get_next_move(stack2, stack1->pivot) == SWAP_FLAG)
+		if (stack2->len >= 2 && stack2->content[0] > stack2->content[1])
 			ss(stack1, stack2);
 		else
 			sb(stack1);

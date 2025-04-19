@@ -107,15 +107,15 @@ int	is_correct(t_stack *stack, int len)
 	int	i;
 	int	lowest_pos;
 
+	if (stack->len < 2)
+		return (1);
 	lowest_pos = 0;
-	while (stack->content[lowest_pos] != lowest(stack->content, len))
+	while (stack->content[lowest_pos] != lowest(stack->content, stack->len))
 		++lowest_pos;
-	if (stack->is_segmented && lowest_pos != 0)
-		return (0);
 	i = 0;
 	while (i < lowest_pos)
 	{
-		if (stack->content[i] != highest(stack->content, i + 1))
+		if (stack->content[i] != lowest(stack->content + i, lowest_pos - i))
 			return (0);
 		++i;
 	}
@@ -135,15 +135,15 @@ int	is_reverse_correct(t_stack *stack, int len)
 	int	i;
 	int	highest_pos;
 
+	if (stack->len < 2)
+		return (1);
 	highest_pos = 0;
-	while (stack->content[highest_pos] != highest(stack->content, len))
+	while (stack->content[highest_pos] != highest(stack->content, stack->len))
 		++highest_pos;
-	if (stack->is_segmented && highest_pos != 0)
-		return (0);
 	i = 0;
 	while (i < highest_pos)
 	{
-		if (stack->content[i] != lowest(stack->content, i + 1))
+		if (stack->content[i] != highest(stack->content + i, highest_pos - i))
 			return (0);
 		++i;
 	}
@@ -184,33 +184,72 @@ int	fast_solution_check(t_stack *stack, int len)
 	return (1);
 }
 
+int	find_next_smallest(t_stack *a, t_stack *b, int value)
+{
+	int	tmp;
+	int	i;
+
+	if (a->len)
+		tmp = a->content[0];
+	i = 0;
+	while (++i < a->len)
+	{
+		if (a->content[i] < tmp && a->content[i] != value)
+			tmp = a->content[i];
+	}
+	i = -1;
+	while (++i < b->len)
+	{
+		if (b->content[i] < tmp && b->content[i] != value)
+			tmp = b->content[i];
+	}
+	return (tmp);
+}
+
+int	find_next_biggest(t_stack *a, t_stack *b, int value)
+{
+	int	tmp;
+	int	i;
+
+	if (a->len)
+		tmp = a->content[0];
+	i = 0;
+	while (++i < a->len)
+	{
+		if (a->content[i] > tmp && a->content[i] != value)
+			tmp = a->content[i];
+	}
+	i = -1;
+	while (++i < b->len)
+	{
+		if (b->content[i] > tmp && b->content[i] != value)
+			tmp = b->content[i];
+	}
+	return (tmp);
+}
 
 int get_next_move(t_stack *stack, int pivot)
 {
-    int first;
-    int second;
     int last;
+	int	successor;
 
-    if (stack->len <= 1)
+    if (stack->len < 2 || (stack->is_segmented && stack->content[0] != pivot))
 		return (NO_MOVE_FLAG);
-	first = stack->content[0];
-    second = stack->content[1];
     last = stack->content[stack->len - 1];
-	if (stack->is_segmented && first == pivot)
+	if (stack->content[0] == pivot)
 		return (ROTATE_FLAG);
-	else if (stack->is_segmented)
-		return (NO_MOVE_FLAG);
-    if ((stack->a_or_b == B && first < pivot)
-        || (stack->a_or_b == A && first > pivot))
+	if (stack->a_or_b == B)
+		successor = find_next_biggest(stack->other_stack, stack, pivot);
+	else
+		successor = find_next_smallest(stack, stack->other_stack, pivot);
+    if (last != pivot)
     {
-        if ((stack->a_or_b == B && first < second)
-            || (stack->a_or_b == A && first > second))
-        {
-            if ((stack->a_or_b == B && first < last)
-                || (stack->a_or_b == A && first > last))
-                return (ROTATE_FLAG);
-            return (SWAP_FLAG);
-        }
+        if ((stack->a_or_b == B && stack->content[0] < last)
+			|| (stack->a_or_b == A && stack->content[0] > last))
+			return (ROTATE_FLAG);
+		return (RROTATE_FLAG);
     }
+	if (stack->content[0] == successor)
+		return (ROTATE_FLAG);
 	return (NO_MOVE_FLAG);
 }

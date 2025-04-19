@@ -44,6 +44,8 @@ int	rra(t_stack *a)
 
 int	rrb(t_stack *b)
 {
+	print_stack(b->other_stack);
+	print_stack(b);
 	write(1, "rrb\n", 4);
 	return (rrotate(b));
 }

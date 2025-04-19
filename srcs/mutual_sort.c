@@ -77,7 +77,11 @@ int	should_swap(t_stack *stack, int pushes_left)
 	pushable_count = 0;
     flag = 0;
     if (stack->len < 2)
-        return (flag);
+        return (0);
+    printf("is correct: %d\n", is_correct(stack, stack->len));
+    if ((stack->a_or_b == A && is_correct(stack, stack->len))
+        || (stack->a_or_b == B && is_reverse_correct(stack, stack->len)))
+        return (0);
     swap(stack);
     if ((stack->a_or_b == A && is_correct(stack, stack->len))
         || (stack->a_or_b == B && is_reverse_correct(stack, stack->len)))
@@ -89,6 +93,7 @@ int	should_swap(t_stack *stack, int pushes_left)
             || (stack->a_or_b == B && stack->content[i] >= stack->pivot))
 			pushable_count++;
 	}
+    printf("pushable count: %d\npushes left: %d\n", pushable_count, pushes_left);
 	if (pushable_count == pushes_left)
 		flag = 1;
     return (flag);
@@ -106,6 +111,9 @@ int should_rotate(t_stack *stack, int pushes_left)
     flag = 0;
     if (stack->len < 2 )
         return (flag);
+    if ((stack->a_or_b == A && is_correct(stack, stack->len))
+        || (stack->a_or_b == B && is_reverse_correct(stack, stack->len)))
+        return (0);
     rotate(stack);
     if ((stack->a_or_b == A && is_correct(stack, stack->len))
         || (stack->a_or_b == B && is_reverse_correct(stack, stack->len)))
@@ -114,12 +122,14 @@ int should_rotate(t_stack *stack, int pushes_left)
     rrotate(stack);
     if (stack->a_or_b == A)
     {
-        if (is_correct(stack, stack->len))
+        if (is_correct(stack, stack->len)
+            || (stack->content[0] <= stack->pivot && stack->content[0] < stack->content[1]))
             flag = RROTATE_FLAG;
     }
     if (stack->a_or_b == B)
     {
-        if (is_reverse_correct(stack, stack->len))
+        if (is_reverse_correct(stack, stack->len)
+            || (stack->content[0] >= stack->pivot && stack->content[0] > stack->content[1]))
             flag = RROTATE_FLAG;
     }
     (void)pushes_left;
@@ -134,28 +144,37 @@ static int	split_a(t_stack *a, t_stack *b, int len)
     n_pushes = 0;
     while (!fast_solution_check(a, a->len) && n_pushes < len / 2)
     {
+        printf("n_pushes = %d\nlen= %d, len / 2 = %d\n", n_pushes, len, len / 2);
+        // if (a->content[0] == 59 && a->content[1] == 62)
+        // {
+        //     printf("59 is first\n");
+        //     print_stack(a);
+        //     print_stack(b);
+        // }
         if (should_swap(a, len / 2 - n_pushes))
+        {
             try_ss(a, b);
+        }
         else if (should_rotate(a, len / 2 - n_pushes) == ROTATE_FLAG)
-            try_rab(a, b);
+            a->n_rotates += try_rab(a, b);
         else if (should_rotate(a, len / 2 - n_pushes) == RROTATE_FLAG)
             try_rrab(a, b);
         else if (a->content[0] > a->pivot)
             a->n_rotates += try_rab(a, b);
         else
         {
-            if (get_next_move(b, a->pivot) == ROTATE_FLAG)
+            if (b->content[0] == a->pivot && n_pushes != len / 2 - 1)
                 rb(b);
-            else if (get_next_move(b, a->pivot) == SWAP_FLAG)
-                sb(b);
             n_pushes += pb(b, a);
         }
     }
+    print_stack(a);
+    print_stack(b);
     if (b->len > 1 && b->content[1] == a->pivot)
         try_ss(b, a);
     put_on_top_a(a, b);
-    print_stack(a);
-    print_stack(b);
+    // print_stack(a);
+    // print_stack(b);
     return (n_pushes);
 }
 
@@ -166,28 +185,30 @@ static int	split_b(t_stack *a, t_stack *b, int len)
     n_pushes = 0;
     while (!fast_solution_check(b, b->len) && n_pushes < len / 2)
     {
+        printf("In split b\n");
+        printf("len = %d\nn_pushes = %d\n", len, n_pushes);
+        print_stack(a);
+        print_stack(b);
+        printf("pivot = %d\n", find_pivot(b, len));
         if (should_swap(b, len / 2 - n_pushes))
             try_ss(b, a);
         else if (should_rotate(b, len / 2 - n_pushes) == ROTATE_FLAG)
-            try_rab(b, a);
+            b->n_rotates += try_rab(b, a);
         else if (should_rotate(b, len / 2 - n_pushes) == RROTATE_FLAG)
             try_rrab(b, a);
         else if (b->content[0] < b->pivot)
             b->n_rotates += try_rab(b, a);
         else
         {
-            if (get_next_move(a, b->pivot) == ROTATE_FLAG)
+            if (a->content[0] == b->pivot && n_pushes != len / 2 - 1)
                 ra(a);
-            else if (get_next_move(a, b->pivot) == SWAP_FLAG)
-                sa(a);
             n_pushes += pa(a, b);
         }
     }
     if (a->len > 1 && a->content[1] == b->pivot)
         try_ss(a, b);
+    // exit(1);
     put_on_top_b(a, b);
-    print_stack(a);
-    print_stack(b);
     return (n_pushes);
 }
 
@@ -199,10 +220,10 @@ void    mutual_sort_a(t_stack *a, int len)
     b = a->other_stack;
 	a->is_segmented = (a->len != len);
 	a->pivot = find_pivot(a, len);
-
-    // printf("entering mutual sort A\n");
-    // print_stack(a);
-    // print_stack(b);
+    printf("found pivot in a with len = %d: %d\n", len, a->pivot);
+    printf("entering mutual sort A\n");
+    print_stack(a);
+    print_stack(b);
     if (a->len <= 3)
         return (push_swap_3a(a));
     if (len <= 2 || fast_solution_check(a, len))
@@ -212,8 +233,10 @@ void    mutual_sort_a(t_stack *a, int len)
         return ;
     }
     n_pushes = split_a(a, b, len);
-    mutual_sort_a(a, len - n_pushes);
-    mutual_sort_b(b, n_pushes);
+    if (!fast_solution_check(a, len - n_pushes))
+        mutual_sort_a(a, len - n_pushes);
+    if (!fast_solution_check(b, n_pushes))
+        mutual_sort_b(b, n_pushes);
 }
 
 void    mutual_sort_b(t_stack *b, int len)
@@ -224,9 +247,9 @@ void    mutual_sort_b(t_stack *b, int len)
     a = b->other_stack;
 	b->is_segmented = (b->len != len);
 	b->pivot = find_pivot(b, len);
-    // printf("entering mutual sort B\n");
-    // print_stack(a);
-    // print_stack(b);
+    printf("entering mutual sort B with len = %d\n", len);
+    print_stack(a);
+    print_stack(b);
     if (b->len <= 3)
         return (push_swap_3b(a, b));
     if (len <= 2 || fast_solution_check(b, len))
@@ -241,6 +264,8 @@ void    mutual_sort_b(t_stack *b, int len)
         return ;
     }
     n_pushes = split_b(a, b, len);
-    mutual_sort_a(a, n_pushes);
-    mutual_sort_b(b, len - n_pushes);
+    if (!fast_solution_check(a, n_pushes))
+        mutual_sort_a(a, n_pushes);
+    if (!fast_solution_check(b, len - n_pushes))
+        mutual_sort_b(b, len - n_pushes);
 }

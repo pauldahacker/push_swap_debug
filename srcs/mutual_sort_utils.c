@@ -14,26 +14,48 @@
 
 void	put_on_top_a(t_stack *a, t_stack *b)
 {
+	int	b_has_pivot;
+	int	i;
+
+	b_has_pivot = 0;
+	i = 0;
+	while (i < b->len)
+	{
+		if (b->content[i] == a->pivot)
+			b_has_pivot = 1;
+		++i;
+	}
 	if (a->n_rotates > 0)
 	{
-		if (b->content[b->len - 1] == a->pivot)
+		while (b_has_pivot && b->content[0] != a->pivot && a->n_rotates > 0)
 			a->n_rotates += rrab(a, b);
 		while (a->n_rotates > 0 && !fast_solution_check(a, a->len))
 			a->n_rotates += rra(a);
 	}
-	if (b->len > 1 && b->content[b->len - 1] == a->pivot)
+	while (b_has_pivot && b->content[0] != a->pivot)
 		rrb(b);
 }
 
 void	put_on_top_b(t_stack *a, t_stack *b)
 {
+	int	a_has_pivot;
+	int	i;
+
+	a_has_pivot = 0;
+	i = 0;
+	while (i < b->len)
+	{
+		if (a->content[i] == b->pivot)
+			a_has_pivot = 1;
+		++i;
+	}
 	if (b->n_rotates > 0)
 	{
-		if (a->content[a->len - 1] == b->pivot)
+		while (a_has_pivot && a->content[0] != b->pivot && b->n_rotates > 0)
 			b->n_rotates += rrab(b, a);
 		while (b->n_rotates > 0 && !fast_solution_check(b, b->len))
 			b->n_rotates += rrb(b);
 	}
-	if (a->len > 1 && a->content[a->len - 1] == b->pivot)
+	while (a_has_pivot && a->content[0] != b->pivot)
 		rra(a);
 }
